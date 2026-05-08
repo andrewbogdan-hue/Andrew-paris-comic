@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Andrew in Paris — Swipe Comic</title>
+  <style>
+    :root {
+      --bg: #111;
+      --panel: #1b1b1b;
+      --text: #f4f4f4;
+      --muted: #c8c8c8;
+      --accent: #f4c542;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #111 0%, #1c1c1c 100%);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    header {
+      padding: 14px 16px 10px;
+      text-align: center;
+      background: rgba(0,0,0,0.35);
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+    }
+    header h1 {
+      margin: 0;
+      font-size: clamp(20px, 4.8vw, 34px);
+      color: var(--accent);
+    }
+    header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .viewer {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 12px 80px;
+      touch-action: pan-y;
+      user-select: none;
+    }
+    .slide-wrap {
+      position: relative;
+      width: min(96vw, 980px);
+      height: calc(100vh - 170px);
+      max-height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transform: translateX(30px) scale(0.985);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+    .slide img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.5);
+      background: white;
+    }
+    .nav-btn {
+      position: fixed;
+      bottom: 18px;
+      z-index: 10;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #111;
+      background: var(--accent);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    }
+    .nav-btn:active { transform: translateY(1px); }
+    #prevBtn { left: 16px; }
+    #nextBtn { right: 16px; }
+    .counter {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 22px;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .hint {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+      color: #ddd;
+      background: rgba(0,0,0,0.4);
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      opacity: 0.9;
+    }
+    @media (max-width: 640px) {
+      .viewer { padding: 10px 8px 88px; }
+      .slide-wrap { width: 100%; height: calc(100vh - 190px); }
+      .nav-btn { padding: 12px 14px; font-size: 14px; }
+      .hint { top: 78px; width: calc(100% - 24px); text-align: center; border-radius: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Andrew in Paris</h1>
+    <p>Swipe left or right to read • Tap buttons if you prefer old-school elegance</p>
+  </header>
+
+  <div class="hint">Share the whole folder or zip so the comic keeps working properly.</div>
+
+  <main class="viewer" id="viewer">
+    <div class="slide-wrap" id="slideWrap">
+      <div class="slide active"><img src="page1.png" alt="Andrew in Paris page 1" /></div>
+      <div class="slide"><img src="page2.png" alt="Andrew in Paris page 2" /></div>
+      <div class="slide"><img src="page3.png" alt="Andrew in Paris page 3" /></div>
+      <div class="slide"><img src="page4.png" alt="Andrew in Paris page 4" /></div>
+    </div>
+  </main>
+
+  <button class="nav-btn" id="prevBtn" aria-label="Previous page">◀ Prev</button>
+  <div class="counter" id="counter">Page 1 / 4</div>
+  <button class="nav-btn" id="nextBtn" aria-label="Next page">Next ▶</button>
+
+  <script>
+    const slides = [...document.querySelectorAll('.slide')];
+    const counter = document.getElementById('counter');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const viewer = document.getElementById('viewer');
+    let index = 0;
+    let startX = null;
+    let startY = null;
+
+    function render() {
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === index));
+      counter.textContent = `Page ${index + 1} / ${slides.length}`;
+      prevBtn.style.opacity = index === 0 ? '0.55' : '1';
+      nextBtn.style.opacity = index === slides.length - 1 ? '0.55' : '1';
+    }
+    function go(delta) {
+      const next = index + delta;
+      if (next < 0 || next >= slides.length) return;
+      index = next;
+      render();
+    }
+    prevBtn.addEventListener('click', () => go(-1));
+    nextBtn.addEventListener('click', () => go(1));
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') go(-1);
+      if (e.key === 'ArrowRight') go(1);
+    });
+    viewer.addEventListener('touchstart', (e) => {
+      const t = e.changedTouches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+    }, { passive: true });
+    viewer.addEventListener('touchend', (e) => {
+      if (startX === null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) go(1);
+        else go(-1);
+      }
+      startX = null;
+      startY = null;
+    }, { passive: true });
+    let mouseDown = false;
+    viewer.addEventListener('mousedown', (e) => { mouseDown = true; startX = e.clientX; startY = e.clientY; });
+    viewer.addEventListener('mouseup', (e) => {
+      if (!mouseDown) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+        if (dx < 0) go(1);
+        else go(-1);
+      }
+      mouseDown = false;
+    });
+    render();
+  </script>
+</body>
+</html>
